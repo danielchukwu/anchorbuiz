@@ -13,6 +13,12 @@ const frontendUrl =
 const authBaseUrl = process.env.CONVEX_SITE_URL || frontendUrl;
 const authSecret = process.env.BETTER_AUTH_SECRET || "development-secret-only";
 
+// Extra trusted origins (comma-separated) — add all Vercel preview/production URLs here via Convex env vars
+const extraTrustedOrigins: string[] = (process.env.TRUSTED_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 async function sendOtpEmail({
   email,
   otp,
@@ -127,6 +133,7 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
       "http://localhost:3010",
       "http://localhost:5173",
       frontendUrl,
+      ...extraTrustedOrigins,
     ],
   });
 };
