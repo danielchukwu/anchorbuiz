@@ -36,11 +36,12 @@ function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const pathname = location.pathname;
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending, error } = authClient.useSession();
   const ensureProfile = useEnsureProfile();
 
   useEffect(() => {
-    if (!isPending && !session?.user) {
+    // Only redirect when we've confirmed there is no session (not still loading, not erroring)
+    if (!isPending && !error && !session?.user) {
       const fullPath =
         location.pathname +
         (location.searchStr ? `?${location.searchStr}` : "");
@@ -50,7 +51,7 @@ function AppLayout() {
         replace: true,
       });
     }
-  }, [isPending, session?.user, location.pathname, location.searchStr, navigate]);
+  }, [isPending, error, session?.user, location.pathname, location.searchStr, navigate]);
 
   useEffect(() => {
     if (session?.user) {
