@@ -1,13 +1,16 @@
 import { ConvexAuthProvider } from "@repo/convex/react";
 import { type ReactNode } from "react";
 
-const convexUrl = import.meta.env.CONVEX_URL;
+const convexUrl =
+	import.meta.env.VITE_CONVEX_URL ||
+	import.meta.env.CONVEX_URL ||
+	(typeof process !== "undefined" ? process.env?.VITE_CONVEX_URL || process.env?.CONVEX_URL : undefined) ||
+	"https://fastidious-jackal-851.eu-west-1.convex.cloud";
 
 export default function ConvexClientProvider({
-  children,
+	children,
 }: {
-  children: ReactNode;
+	children: ReactNode;
 }) {
-  if (!convexUrl) return children;
-  return <ConvexAuthProvider url={convexUrl}>{children}</ConvexAuthProvider>;
+	return <ConvexAuthProvider url={convexUrl}>{children}</ConvexAuthProvider>;
 }
