@@ -1,0 +1,16 @@
+{"shortName": "LLC", "name": "Limited Liability Company", "description": "Flexible business structure combining pass-through taxation with limited liability protection."}
+{"shortName": "C-Corp", "name": "C Corporation", "description": "Standard corporate entity with separate legal liability, taxation, and unlimited shareholders."}
+{"shortName": "S-Corp", "name": "S Corporation", "description": "Corporation that elects pass-through taxation for eligible domestic shareholders."}
+{"shortName": "LTD", "name": "Private Limited Company", "description": "Standard private limited company by shares, protecting personal assets of members."}
+{"shortName": "PLC", "name": "Public Limited Company", "description": "Limited liability company whose shares can be offered and sold to the general public."}
+{"shortName": "Corp", "name": "Corporation / Inc.", "description": "Incorporated federal or provincial company with shares and limited liability."}
+{"shortName": "Pty Ltd", "name": "Proprietary Limited Company", "description": "Standard private limited company in Australia with up to 50 non-employee shareholders."}
+{"shortName": "LDA", "name": "Sociedade por Quotas (Lda)", "description": "Most common private limited company structure in Portugal."}
+{"shortName": "SA", "name": "Sociedade Anónima (SA)", "description": "Public limited corporation in Portugal and civil law countries, suitable for large enterprises."}
+{"shortName": "FZ-LLC", "name": "Free Zone Limited Liability Company", "description": "Limited liability company in UAE Free Zones offering 100% foreign ownership and tax exemptions."}
+{"shortName": "Mainland LLC", "name": "UAE Mainland LLC", "description": "Commercial company registered on mainland UAE to conduct business inside and outside the UAE."}
+{"shortName": "WFOE", "name": "Wholly Foreign-Owned Enterprise", "description": "Limited liability company in China owned exclusively by foreign investors without a Chinese partner."}
+{"shortName": "JV", "name": "Joint Venture", "description": "Sino-foreign equity or cooperative joint venture company in China."}
+{"shortName": "KK", "name": "Kabushiki Kaisha", "description": "Standard joint-stock corporation in Japan with high public credibility and investor appeal."}
+{"shortName": "GK", "name": "Godo Kaisha", "description": "Japanese limited liability company format offering simple establishment and internal flexibility."}
+{"shortName": "Sole Prop", "name": "Sole Proprietorship / Business Name", "description": "Unincorporated business owned and managed by a single individual."}

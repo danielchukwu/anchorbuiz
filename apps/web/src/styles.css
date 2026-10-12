@@ -1,0 +1,33 @@
+@import "@repo/ui/styles/globals.css";
+@import "tw-animate-css";
+
+@source "./**/*.{ts,tsx}";
+
+:root {
+	color-scheme: light;
+	--bg-landing: #f8f8fc;
+	--card-cream: #faf7f2;
+	--card-green: #eef8ee;
+	--card-blue: #edf5fe;
+	--card-purple: #f0edff;
+	--card-peach: #fdf1ec;
+	--text-main: #25243a;
+	--text-muted: #77768a;
+	--brand-primary: #533afd;
+	--brand-primary-dark: #402bd5;
+	--brand-secondary: #e9e5ff;
+	--brand-green: #12a474;
+	--brand-blue: #46a1f8;
+}
+
+body {
+	background-color: #fff;
+	color: var(--text-main);
+	font-family: "Inter", var(--font-sans), sans-serif;
+	min-width: 320px;
+	min-height: 100vh;
+}
+
+.font-display {
+	font-family: "Satoshi", var(--font-satoshi), sans-serif;
+}

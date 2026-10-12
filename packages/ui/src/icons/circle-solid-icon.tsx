@@ -1,0 +1,11 @@
+import type { SVGProps } from "react";
+
+const CircleSolidIcon = (props: SVGProps<SVGSVGElement>) => {
+	return (
+		<svg width="20" height="20" viewBox="0 0 20 20" fill="none" {...props}>
+			<circle cx="10" cy="10" r="10" fill="currentColor" />
+		</svg>
+	);
+};
+
+export default CircleSolidIcon;

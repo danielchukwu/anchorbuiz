@@ -1,0 +1,62 @@
+{
+  "name": "@repo/convex",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "exports": {
+    "./api": "./convex/_generated/api.js",
+    "./data-model": {
+      "types": "./convex/_generated/dataModel.d.ts"
+    },
+    "./auth-client": "./src/auth-client.ts",
+    "./react": "./src/react.tsx",
+    "./hooks/useLocations": "./hooks/useLocations.ts",
+    "./hooks/useProfiles": "./hooks/useProfiles.ts",
+    "./hooks/useBusinesses": "./hooks/useBusinesses.ts",
+    "./hooks/useShareholders": "./hooks/useShareholders.ts",
+    "./hooks/usePackages": "./hooks/usePackages.ts",
+    "./hooks/useEntityTypes": "./hooks/useEntityTypes.ts",
+    "./hooks/useCountryEntityTypes": "./hooks/useCountryEntityTypes.ts",
+    "./hooks/useNotifications": "./hooks/useNotifications.ts",
+    "./hooks/useCurrencies": "./hooks/useCurrencies.ts",
+    "./hooks/useFiles": "./hooks/useFiles.ts"
+  },
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "codegen": "convex codegen",
+    "auth:schema": "auth generate --config ./convex/betterAuth/auth.ts --output ./convex/betterAuth/schema.ts --yes",
+    "lint": "biome lint",
+    "check-types": "tsc --noEmit",
+    "seed:currencies": "npx convex import --table currencies ./seed/currencies.jsonl --replace",
+    "seed:regions": "npx convex import --table regions ./seed/locations/regions.jsonl --replace",
+    "seed:subregions": "npx convex import --table subregions ./seed/locations/subregions.jsonl --replace",
+    "seed:countries": "npx convex import --table countries ./seed/locations/countries.jsonl --replace",
+    "seed:states": "npx convex import --table states ./seed/locations/states.jsonl --replace",
+    "seed:entities": "npx convex run seedEntities:seedEntityTypesAndCountryRelations",
+    "seed:packages": "npx convex run seedPackages:seedPackages",
+    "seed": "npm run seed:currencies && npm run seed:regions && npm run seed:subregions && npm run seed:countries && npm run seed:states && npm run seed:entities && npm run seed:packages",
+    "seed:prod": "npm run seed:currencies -- --prod && npm run seed:regions -- --prod && npm run seed:subregions -- --prod && npm run seed:countries -- --prod && npm run seed:states -- --prod && npx convex run seedEntities:seedEntityTypesAndCountryRelations --prod && npx convex run seedPackages:seedPackages --prod"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1149.0",
+    "@aws-sdk/s3-request-presigner": "^3.1149.0",
+    "@convex-dev/better-auth": "^0.12.5",
+    "better-auth": "1.6.26",
+    "convex": "^1.46.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.5",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.3.0",
+    "auth": "^1.7.6",
+    "typescript": "^6.0.2"
+  },
+  "peerDependencies": {
+    "react": "^18.3.0 || ^19.0.0",
+    "react-dom": "^18.3.0 || ^19.0.0"
+  }
+}

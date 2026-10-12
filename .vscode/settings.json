@@ -1,0 +1,21 @@
+{
+	"tailwindCSS.experimental.configFile": {
+		"apps/web-app/src/styles.css": [
+			"apps/web-app/src/**",
+			"packages/ui/src/**"
+		],
+		"apps/web/src/styles.css": [
+			"apps/web/src/**",
+			"packages/ui/src/**"
+		],
+		"apps/mobile/tailwind.config.js": [
+			"apps/mobile/src/**",
+			"apps/mobile/app/**",
+			"apps/mobile/components/**"
+		]
+	},
+	"tailwindCSS.classFunctions": ["cn", "clsx", "cva"],
+	"editor.quickSuggestions": {
+		"strings": "on"
+	}
+}
