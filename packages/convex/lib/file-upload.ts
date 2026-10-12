@@ -72,7 +72,7 @@ export class ConvexFileUploader {
 export function getConvexUrl() {
   return (
     (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_CONVEX_URL) ||
-    (import.meta as any).env?.VITE_CONVEX_URL ||
+    (import.meta as any).env?.CONVEX_URL ||
     (import.meta as any).env?.NEXT_PUBLIC_CONVEX_URL ||
     ""
   );

@@ -14,7 +14,7 @@ Configure these values in the Convex deployment:
 
 For Google OAuth, add `https://<deployment>.convex.site/api/auth/callback/google` as an authorized redirect URI in Google Cloud.
 
-The web app reads `VITE_CONVEX_URL` from its own environment. Keep secrets out of app `.env` files and source control.
+The web app reads `CONVEX_URL` from its own environment. Keep secrets out of app `.env` files and source control.
 
 ## Layout
 
