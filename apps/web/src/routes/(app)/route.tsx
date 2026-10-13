@@ -13,8 +13,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { authClient } from "@repo/convex/auth-client";
-import { useEnsureProfile } from "@repo/convex/hooks/useProfiles";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export const Route = createFileRoute("/(app)")({ component: AppLayout });
 
@@ -36,41 +35,65 @@ function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const pathname = location.pathname;
-  const { data: session, isPending, error } = authClient.useSession();
-  const ensureProfile = useEnsureProfile();
+  const { data: session, isPending } = authClient.useSession();
 
+  // --- OTT race condition fix ---
+  // ConvexBetterAuthProvider exchanges ?ott=<token> in a useEffect (parent effect).
+  // React runs CHILD effects before PARENT effects, so our effects here fire first.
+  // We use a ref (not useState) to avoid SSR hydration mismatches — on the server
+  // window is undefined and useState would always return false, but useRef is fine.
+  const sawOtt = useRef(false);
+
+  // Effect 1: detect ?ott= in the URL before the provider strips it.
+  // Runs on mount only, before the provider's effect, so window.location.search
+  // still has ?ott= at this point.
   useEffect(() => {
-    // Only redirect when we've confirmed there is no session (not still loading, not erroring)
-    if (!isPending && !error && !session?.user) {
-      const fullPath =
-        location.pathname +
-        (location.searchStr ? `?${location.searchStr}` : "");
+    if (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("ott")
+    ) {
+      sawOtt.current = true;
+      // Safety: if session never populates (exchange failure), unblock after 10s
+      const timer = setTimeout(() => {
+        sawOtt.current = false;
+      }, 10_000);
+      return () => clearTimeout(timer);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Effect 2: redirect guard — runs after Effect 1, so sawOtt.current is already set.
+  // Also runs on re-renders (e.g. when location changes after replaceState strips ?ott=).
+  useEffect(() => {
+    if (isPending) return;
+
+    // Waiting for OTT exchange to complete → hold off on redirecting
+    if (sawOtt.current && session === null) return;
+
+    // Session arrived → OTT exchange done, clear flag
+    if (session) {
+      sawOtt.current = false;
+      return;
+    }
+
+    // The session hook can briefly report `isPending: false` before starting
+    // its initial request (notably on the first OAuth signup callback). Give
+    // that request time to start; dependency changes clean up this timer when
+    // the hook becomes pending or the session arrives.
+    const timer = setTimeout(() => {
+      const authPaths = ["/signup", "/login"];
+      const isAuthPath = authPaths.some((p) => location.pathname.startsWith(p));
+      const redirectPath = isAuthPath ? "/" : location.pathname;
       void navigate({
         to: "/signup",
-        search: { redirect_to: fullPath },
+        search: { redirect_to: redirectPath },
         replace: true,
       });
-    }
-  }, [isPending, error, session?.user, location.pathname, location.searchStr, navigate]);
+    }, 2_000);
 
-  useEffect(() => {
-    if (session?.user) {
-      const fullName = (session.user.name || "").trim();
-      const parts = fullName.split(/\s+/);
-      const firstName = parts[0] || "User";
-      const lastName = parts.length > 1 ? parts.slice(1).join(" ") : firstName;
+    return () => clearTimeout(timer);
+  }, [isPending, session, location.pathname, navigate]);
 
-      void ensureProfile({
-        firstName,
-        lastName,
-        email: session.user.email || "",
-      }).catch((err) => {
-        console.error("Failed to ensure user profile:", err);
-      });
-    }
-  }, [session?.user?.id, session?.user?.email, ensureProfile]);
-
-  // While checking session or if unauthenticated (redirecting), render a loading indicator
+  // Show spinner while session is resolving or OTT exchange might be in progress
   if (isPending || !session?.user) {
     return (
       <div className="flex min-h-dvh w-full items-center justify-center bg-[#f7f7f9]">
@@ -78,6 +101,9 @@ function AppLayout() {
       </div>
     );
   }
+
+
+
 
   return (
     <div className="flex min-h-dvh flex-col bg-[#f7f7f9] text-[#171717] md:flex-row">

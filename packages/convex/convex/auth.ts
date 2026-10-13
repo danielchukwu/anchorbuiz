@@ -10,24 +10,8 @@ import type { DataModel } from "./_generated/dataModel";
 
 const frontendUrl =
   process.env.SITE_URL || process.env.VITE_SITE_URL || "http://localhost:3010";
-const authBaseUrl = process.env.CONVEX_SITE_URL || "https://agile-gnu-461.eu-west-1.convex.site";
+const authBaseUrl = process.env.CONVEX_SITE_URL || frontendUrl;
 const authSecret = process.env.BETTER_AUTH_SECRET || "development-secret-only";
-
-// Extra trusted origins (comma-separated) — add Vercel preview/production URLs here via Convex env vars
-const extraTrustedOrigins: string[] = (process.env.TRUSTED_ORIGINS || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-
-// All origins the auth server should trust
-const allTrustedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "http://localhost:3010",
-  "http://localhost:5173",
-  frontendUrl,
-  ...extraTrustedOrigins,
-];
 
 async function sendOtpEmail({
   email,
@@ -132,18 +116,18 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
       }),
       // The Convex plugin is required for Convex compatibility
       convex({ authConfig }),
-      // Allow cross-origin access from any of the trusted frontend origins
+      // Allow cross-origin access from your frontend (SITE_URL)
       crossDomain({
         siteUrl: frontendUrl,
       }),
     ],
-    trustedOrigins: allTrustedOrigins,
-    advanced: {
-      // Allow auth cookies to be sent cross-origin to any trusted origin
-      crossSubDomainCookies: {
-        enabled: true,
-      },
-    },
+    trustedOrigins: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3010",
+      "http://localhost:5173",
+      frontendUrl,
+    ],
   });
 };
 

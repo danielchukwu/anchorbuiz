@@ -137,16 +137,15 @@ function HomePage() {
   const { data: session, isPending: isSessionLoading } =
     authClient.useSession();
   const profile = useMyProfile();
+  console.log("data:", session);
+  console.log("Profile:", profile);
   const unreadCount = useUnreadNotificationCount();
   const businesses = useMyBusinesses();
 
   const displayName =
-    profile?.firstName ||
-    session?.user?.name?.trim().split(/\s+/)[0] ||
-    "User";
+    profile?.firstName || session?.user?.name?.trim().split(/\s+/)[0] || "User";
 
-  const displayEmail =
-    profile?.email || session?.user?.email || "Signed In";
+  const displayEmail = profile?.email || session?.user?.email || "Signed In";
 
   const avatar = session?.user?.image;
   const isLoading = isSessionLoading || businesses === undefined;

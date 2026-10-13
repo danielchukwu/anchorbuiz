@@ -38,7 +38,28 @@ export function AuthScreen({ mode, redirectTo }: AuthScreenProps) {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const destination = redirectTo || "/";
+  // Sanitize the redirect destination to prevent INVALID_CALLBACK_URL errors.
+  // Better Auth requires a simple trusted URL — strip nested /signup or /login
+  // paths that accumulate from redirect loops.
+  const safeDestination = (() => {
+    const authPaths = ["/signup", "/login"];
+    let dest = redirectTo || "/";
+    // Decode if it's been encoded multiple times
+    try {
+      let prev = dest;
+      // biome-ignore lint/suspicious/noAssignInExpressions: intentional decode loop
+      while (prev !== (prev = decodeURIComponent(prev))) { /* decode */ }
+      dest = prev;
+    } catch {
+      dest = "/";
+    }
+    // If it resolved to an auth page, fall back to home
+    if (!dest || authPaths.some((p) => dest.startsWith(p))) {
+      dest = "/";
+    }
+    // Strip query params so Better Auth gets a clean path
+    return dest.split("?")[0] || "/";
+  })();
 
   async function continueWithGoogle() {
     setError("");
@@ -46,7 +67,7 @@ export function AuthScreen({ mode, redirectTo }: AuthScreenProps) {
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: destination,
+        callbackURL: safeDestination,
       });
       if (result && "error" in result && result.error) {
         setError(
@@ -62,6 +83,7 @@ export function AuthScreen({ mode, redirectTo }: AuthScreenProps) {
       setIsLoading(false);
     }
   }
+
 
   return (
     <main className="relative flex min-h-dvh flex-col bg-white px-6 text-neutral-800">
