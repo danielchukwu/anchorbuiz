@@ -6,14 +6,16 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 
 const config = defineConfig({
-	resolve: { tsconfigPaths: true },
-	plugins: [
-		devtools(),
-		nitro(),
-		tailwindcss(),
-		tanstackStart(),
-		viteReact(),
-	],
+	resolve: {
+		tsconfigPaths: true,
+		dedupe: [
+			"react",
+			"react-dom",
+			"@tanstack/react-router",
+			"@tanstack/router-core",
+		],
+	},
+	plugins: [devtools(), nitro(), tailwindcss(), tanstackStart(), viteReact()],
 });
 
 export default config;

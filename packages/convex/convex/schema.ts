@@ -152,7 +152,7 @@ export default defineSchema({
     isAStartup: v.optional(v.boolean()),
     status: v.string(), // e.g., "draft", "pending", "in_review", "registered", "rejected"
     paymentStatus: v.string(), // e.g., "unpaid", "pending", "paid", "refunded"
-    otherCountriesRegisteredIn: v.optional(v.array(v.number())), // Array of countryOriginalIds
+    otherCountriesRegisteredIn: v.optional(v.array(v.string())), // Array of country names
     entityTypeId: v.optional(v.id("entityTypes")),
     businessDescription: v.optional(v.string()),
     businessActivitiesAndPurpose: v.optional(v.string()),
@@ -232,7 +232,10 @@ export default defineSchema({
     .index("by_countryOriginalId", ["countryOriginalId"])
     .index("by_entityId", ["entityId"])
     .index("by_country_and_entity", ["countryOriginalId", "entityId"])
-    .index("by_country_and_displayOrder", ["countryOriginalId", "displayOrder"]),
+    .index("by_country_and_displayOrder", [
+      "countryOriginalId",
+      "displayOrder",
+    ]),
 
   // -------------- NOTIFICATIONS --------------
   notifications: defineTable({

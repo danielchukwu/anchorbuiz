@@ -41,7 +41,6 @@ export const getMyBusinesses = query({
           country: country
             ? {
                 name: country.name,
-                emoji: country.emoji,
                 iso2: country.iso2,
               }
             : null,
@@ -114,7 +113,7 @@ export const createBusiness = mutation({
     isAStartup: v.optional(v.boolean()),
     status: v.optional(v.string()), // default "draft"
     paymentStatus: v.optional(v.string()), // default "unpaid"
-    otherCountriesRegisteredIn: v.optional(v.array(v.number())),
+    otherCountriesRegisteredIn: v.optional(v.array(v.string())),
     entityTypeId: v.optional(v.id("entityTypes")),
     businessDescription: v.optional(v.string()),
     businessActivitiesAndPurpose: v.optional(v.string()),
@@ -158,7 +157,7 @@ export const updateBusiness = mutation({
     isAStartup: v.optional(v.boolean()),
     status: v.optional(v.string()),
     paymentStatus: v.optional(v.string()),
-    otherCountriesRegisteredIn: v.optional(v.array(v.number())),
+    otherCountriesRegisteredIn: v.optional(v.array(v.string())),
     entityTypeId: v.optional(v.id("entityTypes")),
     businessDescription: v.optional(v.string()),
     businessActivitiesAndPurpose: v.optional(v.string()),

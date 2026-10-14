@@ -11,11 +11,24 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as appNotificationsRouteImport } from './routes/(app)/notifications'
 import { Route as appRegisterRouteImport } from './routes/(app)/register'
 import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as authSignupRouteImport } from './routes/(auth)/signup'
 import { Route as apphomeIndexRouteImport } from './routes/(app)/(home)/index'
+import { Route as AdminhomeIndexRouteImport } from './routes/admin/(home)/index'
+import { Route as AdminCountriesIndexRouteImport } from './routes/admin/countries/index'
+import { Route as AdminCountriesCountryOriginalIdRouteImport } from './routes/admin/countries/$countryOriginalId'
+import { Route as AdminEntitiesIndexRouteImport } from './routes/admin/entities/index'
+import { Route as AdminEntitiesEntityTypeIdRouteImport } from './routes/admin/entities/$entityTypeId'
+import { Route as AdminEntitiesNewRouteImport } from './routes/admin/entities/new'
+import { Route as AdminPackagesIndexRouteImport } from './routes/admin/packages/index'
+import { Route as AdminPackagesPackageIdRouteImport } from './routes/admin/packages/$packageId'
+import { Route as AdminPackagesNewRouteImport } from './routes/admin/packages/new'
+import { Route as AdminCountriesCountryOriginalIdEntitiesRouteImport } from './routes/admin/countries/$countryOriginalId.entities'
+import { Route as AdminEntitiesEntityTypeIdEditRouteImport } from './routes/admin/entities/$entityTypeId.edit'
+import { Route as AdminPackagesPackageIdEditRouteImport } from './routes/admin/packages/$packageId.edit'
 
 const appRouteRoute = appRouteRouteImport.update({
   id: '/(app)',
@@ -23,6 +36,11 @@ const appRouteRoute = appRouteRouteImport.update({
 } as any)
 const authRouteRoute = authRouteRouteImport.update({
   id: '/(auth)',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const appNotificationsRoute = appNotificationsRouteImport.update({
@@ -50,50 +68,202 @@ const apphomeIndexRoute = apphomeIndexRouteImport.update({
   path: '/',
   getParentRoute: () => appRouteRoute,
 } as any)
+const AdminhomeIndexRoute = AdminhomeIndexRouteImport.update({
+  id: '/(home)/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCountriesIndexRoute = AdminCountriesIndexRouteImport.update({
+  id: '/countries/',
+  path: '/countries/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCountriesCountryOriginalIdRoute =
+  AdminCountriesCountryOriginalIdRouteImport.update({
+    id: '/countries/$countryOriginalId',
+    path: '/countries/$countryOriginalId',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
+const AdminEntitiesIndexRoute = AdminEntitiesIndexRouteImport.update({
+  id: '/entities/',
+  path: '/entities/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminEntitiesEntityTypeIdRoute =
+  AdminEntitiesEntityTypeIdRouteImport.update({
+    id: '/entities/$entityTypeId',
+    path: '/entities/$entityTypeId',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
+const AdminEntitiesNewRoute = AdminEntitiesNewRouteImport.update({
+  id: '/entities/new',
+  path: '/entities/new',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPackagesIndexRoute = AdminPackagesIndexRouteImport.update({
+  id: '/packages/',
+  path: '/packages/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPackagesPackageIdRoute = AdminPackagesPackageIdRouteImport.update({
+  id: '/packages/$packageId',
+  path: '/packages/$packageId',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPackagesNewRoute = AdminPackagesNewRouteImport.update({
+  id: '/packages/new',
+  path: '/packages/new',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCountriesCountryOriginalIdEntitiesRoute =
+  AdminCountriesCountryOriginalIdEntitiesRouteImport.update({
+    id: '/entities',
+    path: '/entities',
+    getParentRoute: () => AdminCountriesCountryOriginalIdRoute,
+  } as any)
+const AdminEntitiesEntityTypeIdEditRoute =
+  AdminEntitiesEntityTypeIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AdminEntitiesEntityTypeIdRoute,
+  } as any)
+const AdminPackagesPackageIdEditRoute =
+  AdminPackagesPackageIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AdminPackagesPackageIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
+  '/admin': typeof AdminRouteRouteWithChildren
   '/notifications': typeof appNotificationsRoute
   '/register': typeof appRegisterRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
+  '/admin/countries/$countryOriginalId': typeof AdminCountriesCountryOriginalIdRouteWithChildren
+  '/admin/entities/$entityTypeId': typeof AdminEntitiesEntityTypeIdRouteWithChildren
+  '/admin/entities/new': typeof AdminEntitiesNewRoute
+  '/admin/packages/$packageId': typeof AdminPackagesPackageIdRouteWithChildren
+  '/admin/packages/new': typeof AdminPackagesNewRoute
   '/': typeof apphomeIndexRoute
+  '/admin/': typeof AdminhomeIndexRoute
+  '/admin/countries/': typeof AdminCountriesIndexRoute
+  '/admin/entities/': typeof AdminEntitiesIndexRoute
+  '/admin/packages/': typeof AdminPackagesIndexRoute
+  '/admin/countries/$countryOriginalId/entities': typeof AdminCountriesCountryOriginalIdEntitiesRoute
+  '/admin/entities/$entityTypeId/edit': typeof AdminEntitiesEntityTypeIdEditRoute
+  '/admin/packages/$packageId/edit': typeof AdminPackagesPackageIdEditRoute
 }
 export interface FileRoutesByTo {
   '/notifications': typeof appNotificationsRoute
   '/register': typeof appRegisterRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
+  '/admin/countries/$countryOriginalId': typeof AdminCountriesCountryOriginalIdRouteWithChildren
+  '/admin/entities/$entityTypeId': typeof AdminEntitiesEntityTypeIdRouteWithChildren
+  '/admin/entities/new': typeof AdminEntitiesNewRoute
+  '/admin/packages/$packageId': typeof AdminPackagesPackageIdRouteWithChildren
+  '/admin/packages/new': typeof AdminPackagesNewRoute
   '/': typeof apphomeIndexRoute
+  '/admin': typeof AdminhomeIndexRoute
+  '/admin/countries': typeof AdminCountriesIndexRoute
+  '/admin/entities': typeof AdminEntitiesIndexRoute
+  '/admin/packages': typeof AdminPackagesIndexRoute
+  '/admin/countries/$countryOriginalId/entities': typeof AdminCountriesCountryOriginalIdEntitiesRoute
+  '/admin/entities/$entityTypeId/edit': typeof AdminEntitiesEntityTypeIdEditRoute
+  '/admin/packages/$packageId/edit': typeof AdminPackagesPackageIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(app)': typeof appRouteRouteWithChildren
   '/(auth)': typeof authRouteRouteWithChildren
+  '/admin': typeof AdminRouteRouteWithChildren
   '/(app)/notifications': typeof appNotificationsRoute
   '/(app)/register': typeof appRegisterRoute
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/signup': typeof authSignupRoute
+  '/admin/countries/$countryOriginalId': typeof AdminCountriesCountryOriginalIdRouteWithChildren
+  '/admin/entities/$entityTypeId': typeof AdminEntitiesEntityTypeIdRouteWithChildren
+  '/admin/entities/new': typeof AdminEntitiesNewRoute
+  '/admin/packages/$packageId': typeof AdminPackagesPackageIdRouteWithChildren
+  '/admin/packages/new': typeof AdminPackagesNewRoute
   '/(app)/(home)/': typeof apphomeIndexRoute
+  '/admin/(home)/': typeof AdminhomeIndexRoute
+  '/admin/countries/': typeof AdminCountriesIndexRoute
+  '/admin/entities/': typeof AdminEntitiesIndexRoute
+  '/admin/packages/': typeof AdminPackagesIndexRoute
+  '/admin/countries/$countryOriginalId/entities': typeof AdminCountriesCountryOriginalIdEntitiesRoute
+  '/admin/entities/$entityTypeId/edit': typeof AdminEntitiesEntityTypeIdEditRoute
+  '/admin/packages/$packageId/edit': typeof AdminPackagesPackageIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/notifications' | '/register' | '/login' | '/signup' | '/'
+  fullPaths:
+    | '/admin'
+    | '/notifications'
+    | '/register'
+    | '/login'
+    | '/signup'
+    | '/admin/countries/$countryOriginalId'
+    | '/admin/entities/$entityTypeId'
+    | '/admin/entities/new'
+    | '/admin/packages/$packageId'
+    | '/admin/packages/new'
+    | '/'
+    | '/admin/'
+    | '/admin/countries/'
+    | '/admin/entities/'
+    | '/admin/packages/'
+    | '/admin/countries/$countryOriginalId/entities'
+    | '/admin/entities/$entityTypeId/edit'
+    | '/admin/packages/$packageId/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/notifications' | '/register' | '/login' | '/signup' | '/'
+  to:
+    | '/notifications'
+    | '/register'
+    | '/login'
+    | '/signup'
+    | '/admin/countries/$countryOriginalId'
+    | '/admin/entities/$entityTypeId'
+    | '/admin/entities/new'
+    | '/admin/packages/$packageId'
+    | '/admin/packages/new'
+    | '/'
+    | '/admin'
+    | '/admin/countries'
+    | '/admin/entities'
+    | '/admin/packages'
+    | '/admin/countries/$countryOriginalId/entities'
+    | '/admin/entities/$entityTypeId/edit'
+    | '/admin/packages/$packageId/edit'
   id:
     | '__root__'
     | '/(app)'
     | '/(auth)'
+    | '/admin'
     | '/(app)/notifications'
     | '/(app)/register'
     | '/(auth)/login'
     | '/(auth)/signup'
+    | '/admin/countries/$countryOriginalId'
+    | '/admin/entities/$entityTypeId'
+    | '/admin/entities/new'
+    | '/admin/packages/$packageId'
+    | '/admin/packages/new'
     | '/(app)/(home)/'
+    | '/admin/(home)/'
+    | '/admin/countries/'
+    | '/admin/entities/'
+    | '/admin/packages/'
+    | '/admin/countries/$countryOriginalId/entities'
+    | '/admin/entities/$entityTypeId/edit'
+    | '/admin/packages/$packageId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   appRouteRoute: typeof appRouteRouteWithChildren
   authRouteRoute: typeof authRouteRouteWithChildren
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -110,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof authRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(app)/notifications': {
@@ -147,6 +324,90 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof apphomeIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
+    '/admin/(home)/': {
+      id: '/admin/(home)/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminhomeIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/countries/': {
+      id: '/admin/countries/'
+      path: '/countries'
+      fullPath: '/admin/countries/'
+      preLoaderRoute: typeof AdminCountriesIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/countries/$countryOriginalId': {
+      id: '/admin/countries/$countryOriginalId'
+      path: '/countries/$countryOriginalId'
+      fullPath: '/admin/countries/$countryOriginalId'
+      preLoaderRoute: typeof AdminCountriesCountryOriginalIdRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/entities/': {
+      id: '/admin/entities/'
+      path: '/entities'
+      fullPath: '/admin/entities/'
+      preLoaderRoute: typeof AdminEntitiesIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/entities/$entityTypeId': {
+      id: '/admin/entities/$entityTypeId'
+      path: '/entities/$entityTypeId'
+      fullPath: '/admin/entities/$entityTypeId'
+      preLoaderRoute: typeof AdminEntitiesEntityTypeIdRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/entities/new': {
+      id: '/admin/entities/new'
+      path: '/entities/new'
+      fullPath: '/admin/entities/new'
+      preLoaderRoute: typeof AdminEntitiesNewRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/packages/': {
+      id: '/admin/packages/'
+      path: '/packages'
+      fullPath: '/admin/packages/'
+      preLoaderRoute: typeof AdminPackagesIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/packages/$packageId': {
+      id: '/admin/packages/$packageId'
+      path: '/packages/$packageId'
+      fullPath: '/admin/packages/$packageId'
+      preLoaderRoute: typeof AdminPackagesPackageIdRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/packages/new': {
+      id: '/admin/packages/new'
+      path: '/packages/new'
+      fullPath: '/admin/packages/new'
+      preLoaderRoute: typeof AdminPackagesNewRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/countries/$countryOriginalId/entities': {
+      id: '/admin/countries/$countryOriginalId/entities'
+      path: '/entities'
+      fullPath: '/admin/countries/$countryOriginalId/entities'
+      preLoaderRoute: typeof AdminCountriesCountryOriginalIdEntitiesRouteImport
+      parentRoute: typeof AdminCountriesCountryOriginalIdRoute
+    }
+    '/admin/entities/$entityTypeId/edit': {
+      id: '/admin/entities/$entityTypeId/edit'
+      path: '/edit'
+      fullPath: '/admin/entities/$entityTypeId/edit'
+      preLoaderRoute: typeof AdminEntitiesEntityTypeIdEditRouteImport
+      parentRoute: typeof AdminEntitiesEntityTypeIdRoute
+    }
+    '/admin/packages/$packageId/edit': {
+      id: '/admin/packages/$packageId/edit'
+      path: '/edit'
+      fullPath: '/admin/packages/$packageId/edit'
+      preLoaderRoute: typeof AdminPackagesPackageIdEditRouteImport
+      parentRoute: typeof AdminPackagesPackageIdRoute
+    }
   }
 }
 
@@ -180,9 +441,82 @@ const authRouteRouteWithChildren = authRouteRoute._addFileChildren(
   authRouteRouteChildren,
 )
 
+interface AdminCountriesCountryOriginalIdRouteChildren {
+  AdminCountriesCountryOriginalIdEntitiesRoute: typeof AdminCountriesCountryOriginalIdEntitiesRoute
+}
+
+const AdminCountriesCountryOriginalIdRouteChildren: AdminCountriesCountryOriginalIdRouteChildren =
+  {
+    AdminCountriesCountryOriginalIdEntitiesRoute:
+      AdminCountriesCountryOriginalIdEntitiesRoute,
+  }
+
+const AdminCountriesCountryOriginalIdRouteWithChildren =
+  AdminCountriesCountryOriginalIdRoute._addFileChildren(
+    AdminCountriesCountryOriginalIdRouteChildren,
+  )
+
+interface AdminEntitiesEntityTypeIdRouteChildren {
+  AdminEntitiesEntityTypeIdEditRoute: typeof AdminEntitiesEntityTypeIdEditRoute
+}
+
+const AdminEntitiesEntityTypeIdRouteChildren: AdminEntitiesEntityTypeIdRouteChildren =
+  {
+    AdminEntitiesEntityTypeIdEditRoute: AdminEntitiesEntityTypeIdEditRoute,
+  }
+
+const AdminEntitiesEntityTypeIdRouteWithChildren =
+  AdminEntitiesEntityTypeIdRoute._addFileChildren(
+    AdminEntitiesEntityTypeIdRouteChildren,
+  )
+
+interface AdminPackagesPackageIdRouteChildren {
+  AdminPackagesPackageIdEditRoute: typeof AdminPackagesPackageIdEditRoute
+}
+
+const AdminPackagesPackageIdRouteChildren: AdminPackagesPackageIdRouteChildren =
+  {
+    AdminPackagesPackageIdEditRoute: AdminPackagesPackageIdEditRoute,
+  }
+
+const AdminPackagesPackageIdRouteWithChildren =
+  AdminPackagesPackageIdRoute._addFileChildren(
+    AdminPackagesPackageIdRouteChildren,
+  )
+
+interface AdminRouteRouteChildren {
+  AdminCountriesCountryOriginalIdRoute: typeof AdminCountriesCountryOriginalIdRouteWithChildren
+  AdminEntitiesEntityTypeIdRoute: typeof AdminEntitiesEntityTypeIdRouteWithChildren
+  AdminEntitiesNewRoute: typeof AdminEntitiesNewRoute
+  AdminPackagesPackageIdRoute: typeof AdminPackagesPackageIdRouteWithChildren
+  AdminPackagesNewRoute: typeof AdminPackagesNewRoute
+  AdminhomeIndexRoute: typeof AdminhomeIndexRoute
+  AdminCountriesIndexRoute: typeof AdminCountriesIndexRoute
+  AdminEntitiesIndexRoute: typeof AdminEntitiesIndexRoute
+  AdminPackagesIndexRoute: typeof AdminPackagesIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminCountriesCountryOriginalIdRoute:
+    AdminCountriesCountryOriginalIdRouteWithChildren,
+  AdminEntitiesEntityTypeIdRoute: AdminEntitiesEntityTypeIdRouteWithChildren,
+  AdminEntitiesNewRoute: AdminEntitiesNewRoute,
+  AdminPackagesPackageIdRoute: AdminPackagesPackageIdRouteWithChildren,
+  AdminPackagesNewRoute: AdminPackagesNewRoute,
+  AdminhomeIndexRoute: AdminhomeIndexRoute,
+  AdminCountriesIndexRoute: AdminCountriesIndexRoute,
+  AdminEntitiesIndexRoute: AdminEntitiesIndexRoute,
+  AdminPackagesIndexRoute: AdminPackagesIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   appRouteRoute: appRouteRouteWithChildren,
   authRouteRoute: authRouteRouteWithChildren,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

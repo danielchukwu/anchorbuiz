@@ -7,6 +7,7 @@ import { components } from "./_generated/api";
 import { query } from "./_generated/server";
 import type { GenericCtx } from "@convex-dev/better-auth";
 import type { DataModel } from "./_generated/dataModel";
+import schema from "./betterAuth/schema";
 
 const frontendUrl =
   process.env.SITE_URL || process.env.VITE_SITE_URL || "http://localhost:3010";
@@ -80,7 +81,10 @@ async function sendOtpEmail({
 
 // The component client has methods needed for integrating Convex with Better Auth,
 // as well as helper methods for general use.
-export const authComponent = createClient<DataModel>(components.betterAuth);
+export const authComponent = createClient<DataModel, typeof schema>(
+  components.betterAuth,
+  { local: { schema }, verbose: false },
+);
 
 export const createAuth = (ctx: GenericCtx<DataModel>) => {
   const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -101,6 +105,16 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
     baseURL: authBaseUrl,
     secret: authSecret,
     database: authComponent.adapter(ctx),
+    user: {
+      additionalFields: {
+        role: {
+          type: "string",
+          required: false,
+          defaultValue: "user",
+          input: false,
+        },
+      },
+    },
     // Configure simple, non-verified email/password to get started
     emailAndPassword: {
       enabled: true,

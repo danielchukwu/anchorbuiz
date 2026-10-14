@@ -21,6 +21,16 @@ export function createAuthOptions(ctx: GenericCtx<DataModel>) {
 		baseURL: process.env.SITE_URL,
 		secret: process.env.BETTER_AUTH_SECRET,
 		database: authComponent.adapter(ctx),
+		user: {
+			additionalFields: {
+				role: {
+					type: "string",
+					required: false,
+					defaultValue: "user",
+					input: false,
+				},
+			},
+		},
 		emailAndPassword: { enabled: true },
 		socialProviders:
 			googleClientId && googleClientSecret

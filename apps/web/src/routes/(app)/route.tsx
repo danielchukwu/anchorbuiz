@@ -102,9 +102,6 @@ function AppLayout() {
     );
   }
 
-
-
-
   return (
     <div className="flex min-h-dvh flex-col bg-[#f7f7f9] text-[#171717] md:flex-row">
       <AppSidebarShell

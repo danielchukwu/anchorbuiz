@@ -21,6 +21,7 @@
     "./hooks/useEntityTypes": "./hooks/useEntityTypes.ts",
     "./hooks/useCountryEntityTypes": "./hooks/useCountryEntityTypes.ts",
     "./hooks/useNotifications": "./hooks/useNotifications.ts",
+    "./hooks/useAdmin": "./hooks/useAdmin.ts",
     "./hooks/useCurrencies": "./hooks/useCurrencies.ts",
     "./hooks/useFiles": "./hooks/useFiles.ts"
   },

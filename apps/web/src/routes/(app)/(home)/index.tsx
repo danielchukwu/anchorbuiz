@@ -1,11 +1,9 @@
 import WhatsAppIcon from "@repo/ui/icons/whatsapp-icon";
-import { authClient } from "@repo/convex/auth-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus, Building2 } from "lucide-react";
-import NotificationIcon from "@repo/ui/icons/notification-icon";
 import { useMyBusinesses } from "@repo/convex/hooks/useBusinesses";
-import { useMyProfile } from "@repo/convex/hooks/useProfiles";
-import { useUnreadNotificationCount } from "@repo/convex/hooks/useNotifications";
+import CountryFlag from "../../../components/CountryFlag";
+import UserHeader from "../../../components/UserHeader";
 
 export const Route = createFileRoute("/(app)/(home)/")({
   validateSearch: (
@@ -25,7 +23,6 @@ interface EnrichedBusiness {
   countryOriginalId: number;
   country?: {
     name: string;
-    emoji?: string | null;
     iso2?: string | null;
   } | null;
   entityType?: {
@@ -61,7 +58,6 @@ function getStatusBadge(status: string) {
 
 function BusinessTile({ business }: BusinessTileProps) {
   const badge = getStatusBadge(business.status);
-  const countryEmoji = business.country?.emoji || "🌐";
   const entityTypeName =
     business.entityType?.name || business.entityType?.shortName || undefined;
 
@@ -89,11 +85,13 @@ function BusinessTile({ business }: BusinessTileProps) {
             {business.name.slice(0, 1).toUpperCase()}
           </span>
         )}
-        <span
-          className="absolute -bottom-0.5 right-0.5 flex size-5 items-center justify-center rounded-full border border-white bg-white text-xs shadow-xs"
-          aria-label={business.country?.name || "Country"}
-        >
-          {countryEmoji}
+        <span className="absolute -bottom-0.5 right-0.5 flex size-5 items-center justify-center overflow-hidden rounded-full border border-white bg-white shadow-xs">
+          <CountryFlag
+            iso2={business.country?.iso2}
+            name={business.country?.name || "Country"}
+            className="size-full"
+            imgClassName="size-full rounded-full object-cover"
+          />
         </span>
       </div>
 
@@ -134,67 +132,12 @@ function EmptyBusinessState() {
 }
 
 function HomePage() {
-  const { data: session, isPending: isSessionLoading } =
-    authClient.useSession();
-  const profile = useMyProfile();
-  console.log("data:", session);
-  console.log("Profile:", profile);
-  const unreadCount = useUnreadNotificationCount();
   const businesses = useMyBusinesses();
-
-  const displayName =
-    profile?.firstName || session?.user?.name?.trim().split(/\s+/)[0] || "User";
-
-  const displayEmail = profile?.email || session?.user?.email || "Signed In";
-
-  const avatar = session?.user?.image;
-  const isLoading = isSessionLoading || businesses === undefined;
+  const isLoading = businesses === undefined;
 
   return (
     <div className="relative mx-auto flex min-h-dvh max-w-xl flex-col bg-white px-6 pb-24 pt-8 text-neutral-800 sm:px-8 sm:pt-12">
-      {/* Top Header / User Profile */}
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3 min-w-0">
-          {avatar ? (
-            <img
-              className="size-10 shrink-0 rounded-full object-cover shadow-xs"
-              src={avatar}
-              alt=""
-            />
-          ) : (
-            <span
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ffd89d] to-[#db754f] text-sm font-bold text-white shadow-xs"
-              aria-hidden="true"
-            >
-              {displayName.slice(0, 1).toUpperCase()}
-            </span>
-          )}
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-neutral-800">
-              Hi, {displayName}
-            </p>
-            <span className="block truncate text-xs text-neutral-500 sm:text-sm">
-              {displayEmail}
-            </span>
-          </div>
-        </div>
-
-        <Link
-          to="/notifications"
-          className="relative rounded-full p-2 text-neutral-800 transition-colors hover:bg-neutral-100"
-          aria-label={`Notifications, ${unreadCount ?? 0} unread`}
-        >
-          <NotificationIcon
-            className="size-6 stroke-[1.8]"
-            aria-hidden="true"
-          />
-          {unreadCount !== undefined && unreadCount > 0 && (
-            <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full border border-white bg-[#ff384d] text-[10px] font-bold text-white">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </Link>
-      </header>
+      <UserHeader />
 
       {/* Main Section */}
       <main className="mt-8 flex-1">

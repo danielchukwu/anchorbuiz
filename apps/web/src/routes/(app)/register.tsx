@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Check, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import WhatsAppIcon from "@repo/ui/icons/whatsapp-icon";
 import { Button } from "@repo/ui/components/button";
 import { Input, Textarea } from "@repo/ui/components/input";
@@ -8,12 +8,19 @@ import { SelectCountry } from "@repo/ui/components/selects/country-select";
 import { SelectState } from "@repo/ui/components/selects/state-select";
 import { SelectDate } from "@repo/ui/components/selects/date-select";
 import { AppSelect } from "@repo/ui/components/selects/app-select";
-import { useState, type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import {
   useFetchStates,
   useFetchCountries,
   useRegistrationCountries,
 } from "@repo/convex/hooks/useLocations";
+import { usePackages } from "@repo/convex/hooks/usePackages";
+import { useEntityTypesByCountry } from "@repo/convex/hooks/useCountryEntityTypes";
+import { useCreateBusiness } from "@repo/convex/hooks/useBusinesses";
+import { useAddShareholder } from "@repo/convex/hooks/useShareholders";
+import { useUpsertProfile } from "@repo/convex/hooks/useProfiles";
+import { useForm } from "react-hook-form";
+import CountryFlag from "../../components/CountryFlag";
 
 export const Route = createFileRoute("/(app)/register")({
   component: BusinessRegistrationPage,
@@ -23,20 +30,8 @@ export const Route = createFileRoute("/(app)/register")({
 /*                                CONSTANTS                                   */
 /* -------------------------------------------------------------------------- */
 
-// Countries are now fetched live from Convex (isRegistrationAvailable === true)
+// Countries & Packages & Entity Types are fetched live from Convex
 
-const includedServices = [
-  "Company registration",
-  "US Business Address",
-  "Company documents & registers",
-  "Mail scanning",
-  "Privacy protection",
-  "Compliance reminders/support",
-  "Banking account opening assistance",
-  "EIN is processed within 2 to 4 weeks (needed for bank account opening)",
-];
-
-const businessStructures = ["Limited Liability Company", "Corporation"];
 const businessKinds = ["A new business", "An existing business"];
 const months = [
   "January",
@@ -75,18 +70,6 @@ type RegistrationStep =
   | "shareholder-form"
   | "submitted";
 
-type BusinessDetails = {
-  registeredElsewhere: "Yes" | "No";
-  registeredCountries: string;
-  businessName: string;
-  structure: string;
-  briefDescription: string;
-  activityPurpose: string;
-  businessKind: string;
-  startYear: string;
-  startMonth: string;
-};
-
 type PersonalInformation = {
   firstName: string;
   lastName: string;
@@ -108,10 +91,27 @@ type Shareholder = {
   email: string;
   phone: string;
   country: string;
+  countryOriginalId?: number;
   state: string;
+  stateOriginalId?: number;
   city: string;
   zipCode: string;
   address: string;
+};
+
+export type RegistrationFormData = {
+  countryName: string;
+  registeredElsewhere: "Yes" | "No";
+  registeredCountries: string;
+  businessName: string;
+  structure: string;
+  briefDescription: string;
+  activityPurpose: string;
+  businessKind: string;
+  startYear: string;
+  startMonth: string;
+  personal: PersonalInformation;
+  shareholders: Shareholder[];
 };
 
 type HeaderTone = "business" | "personal" | "ownership";
@@ -349,8 +349,10 @@ function CountryStep({
 
   const countryList = (registrationCountries ?? []).map((c) => ({
     name: c.name,
-    flag: c.emoji ?? "🌐",
+    iso2: c.iso2,
   }));
+
+  const isCountryValid = Boolean(countryName && countryName.trim());
 
   return (
     <StepWrapper>
@@ -370,7 +372,7 @@ function CountryStep({
           </div>
         ) : (
           <div
-            className="flex flex-col space-y-2"
+            className="space-y-2"
             role="radiogroup"
             aria-label="Company registration country"
           >
@@ -389,9 +391,12 @@ function CountryStep({
                   aria-checked={selected}
                   onClick={() => onSelectCountry(item.name)}
                 >
-                  <span className="text-2xl leading-none" aria-hidden="true">
-                    {item.flag}
-                  </span>
+                  <CountryFlag
+                    iso2={item.iso2}
+                    name={item.name}
+                    className="size-8"
+                    imgClassName="size-full rounded-full object-cover shadow-xs"
+                  />
                   <span className="flex-1">{item.name}</span>
                   <span
                     className={`flex size-6 shrink-0 items-center justify-center rounded-full transition-colors ${
@@ -408,7 +413,7 @@ function CountryStep({
           </div>
         )}
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!isCountryValid} />
     </StepWrapper>
   );
 }
@@ -418,56 +423,113 @@ function CountryStep({
 /* -------------------------------------------------------------------------- */
 
 interface PackageStepProps {
-  country: { name: string; flag?: string | null };
+  country: { name: string; iso2?: string | null; originalId?: number };
   onBack: () => void;
   onContinue: () => void;
 }
 
 function PackageStep({ country, onBack, onContinue }: PackageStepProps) {
+  const packages = usePackages(country.originalId);
+  const selectedPackage = packages && packages.length > 0 ? packages[0] : null;
+
+  const offerings: string[] = Array.isArray(selectedPackage?.offerings)
+    ? (selectedPackage.offerings as string[])
+    : [];
+
+  const formattedNairaPrice =
+    selectedPackage?.priceInNaira !== undefined
+      ? `₦${selectedPackage.priceInNaira.toLocaleString()}`
+      : selectedPackage?.currency === "NGN"
+        ? `₦${selectedPackage.price.toLocaleString()}`
+        : null;
+
+  const formattedForeignPrice =
+    selectedPackage?.currency && selectedPackage.currency !== "NGN"
+      ? `${selectedPackage.currency} ${selectedPackage.price.toLocaleString()}`
+      : null;
+
+  const isPackageReady = packages !== undefined;
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader onBack={onBack} />
       <main className="flex-1 pb-6">
         <div className="flex flex-col items-center text-center">
-          <div
-            className="mb-6 flex size-24 items-center justify-center rounded-full bg-white text-6xl shadow-md sm:size-28"
-            aria-label={country.name}
-          >
-            {country.flag}
+          <div aria-label={country.name}>
+            <CountryFlag
+              iso2={country.iso2}
+              name={country.name}
+              className="size-16 sm:size-20"
+              imgClassName="size-full rounded-full object-cover shadow-xs"
+            />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-[#342490] sm:text-3xl">
-            {country.packageName}
+            {selectedPackage?.name ?? `${country.name} Package`}
           </h1>
         </div>
 
-        <section
-          className="mt-8 rounded-3xl bg-[#f6f4ff] p-6 text-neutral-800"
-          aria-label="Package price and inclusions"
-        >
-          <p className="text-base text-neutral-600">Price</p>
-          <div className="mb-6 mt-2 flex flex-wrap items-baseline gap-2">
-            <strong className="text-3xl font-extrabold tracking-tight text-neutral-900 sm:text-4xl">
-              ₦930,000
-            </strong>
-            <span className="text-base text-neutral-400">($700)</span>
+        {packages === undefined ? (
+          <div className="mt-8 animate-pulse rounded-3xl bg-[#f6f4ff] p-6 space-y-4">
+            <div className="h-4 w-16 bg-neutral-200 rounded" />
+            <div className="h-8 w-48 bg-neutral-200 rounded" />
+            <div className="space-y-3 pt-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-5 w-full bg-neutral-200 rounded" />
+              ))}
+            </div>
           </div>
-          <ul className="space-y-4">
-            {includedServices.map((service) => (
-              <li
-                key={service}
-                className="flex items-start gap-3.5 text-sm text-neutral-700 sm:text-base"
-              >
-                <Check
-                  className="mt-0.5 size-5 shrink-0 stroke-[2.5] text-[#6044ff]"
-                  aria-hidden="true"
-                />
-                <span>{service}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        ) : (
+          <section
+            className="mt-8 rounded-3xl bg-[#f6f4ff] p-6 text-neutral-800"
+            aria-label="Package price and inclusions"
+          >
+            <p className="text-base text-neutral-600">Price</p>
+            <div className="mb-6 mt-2 flex flex-wrap items-baseline gap-2">
+              {formattedNairaPrice ? (
+                <>
+                  <strong className="text-3xl font-extrabold tracking-tight text-neutral-900 sm:text-4xl">
+                    {formattedNairaPrice}
+                  </strong>
+                  {formattedForeignPrice && (
+                    <span className="text-base text-neutral-400">
+                      ({formattedForeignPrice})
+                    </span>
+                  )}
+                </>
+              ) : formattedForeignPrice ? (
+                <strong className="text-3xl font-extrabold tracking-tight text-neutral-900 sm:text-4xl">
+                  {formattedForeignPrice}
+                </strong>
+              ) : (
+                <strong className="text-2xl font-bold tracking-tight text-neutral-900">
+                  Contact Us
+                </strong>
+              )}
+            </div>
+            {offerings.length > 0 ? (
+              <ul className="space-y-4">
+                {offerings.map((service, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-start gap-3.5 text-sm text-neutral-700 sm:text-base"
+                  >
+                    <Check
+                      className="mt-0.5 size-5 shrink-0 stroke-[2.5] text-[#6044ff]"
+                      aria-hidden="true"
+                    />
+                    <span>{service}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-neutral-500">
+                Package offerings for this country will be provided shortly.
+              </p>
+            )}
+          </section>
+        )}
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!isPackageReady} />
     </div>
   );
 }
@@ -489,6 +551,8 @@ function RegisteredElsewhereStep({
   onBack,
   onContinue,
 }: RegisteredElsewhereStepProps) {
+  const isValid = value === "Yes" || value === "No";
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader label="Business details" tone="business" onBack={onBack} />
@@ -503,7 +567,7 @@ function RegisteredElsewhereStep({
           onChange={(val) => onChange(val as "Yes" | "No")}
         />
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!isValid} />
     </div>
   );
 }
@@ -525,6 +589,8 @@ function RegisteredCountriesStep({
   onBack,
   onContinue,
 }: RegisteredCountriesStepProps) {
+  const isValid = Boolean(value.trim());
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader label="Business details" tone="business" onBack={onBack} />
@@ -543,7 +609,7 @@ function RegisteredCountriesStep({
           For example: Nigeria, Canada, Russia
         </p>
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!isValid} />
     </div>
   );
 }
@@ -565,6 +631,8 @@ function BusinessNameStep({
   onBack,
   onContinue,
 }: BusinessNameStepProps) {
+  const isValid = Boolean(value.trim());
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader label="Business details" tone="business" onBack={onBack} />
@@ -583,7 +651,7 @@ function BusinessNameStep({
           For example: Makachi consulting, Inschool Apps
         </p>
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!isValid} />
     </div>
   );
 }
@@ -593,6 +661,7 @@ function BusinessNameStep({
 /* -------------------------------------------------------------------------- */
 
 interface StructureStepProps {
+  countryOriginalId?: number;
   value: string;
   onChange: (value: string) => void;
   onBack: () => void;
@@ -600,11 +669,24 @@ interface StructureStepProps {
 }
 
 function StructureStep({
+  countryOriginalId,
   value,
   onChange,
   onBack,
   onContinue,
 }: StructureStepProps) {
+  const countryEntities = useEntityTypesByCountry(countryOriginalId);
+
+  const options = (countryEntities ?? [])
+    .filter((mapping) => Boolean(mapping.entity))
+    .map((mapping) => ({
+      name: mapping.entity?.name ?? "",
+      shortName: mapping.entity?.shortName,
+      description: mapping.entity?.description,
+    }));
+
+  const isValid = Boolean(value.trim());
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader label="Business details" tone="business" onBack={onBack} />
@@ -612,14 +694,74 @@ function StructureStep({
         <h1 className="mb-8 text-2xl font-bold leading-snug tracking-tight text-[#342490] sm:text-3xl">
           Choose your preferred Business Structure
         </h1>
-        <RadioChoices
-          name="businessStructure"
-          options={businessStructures}
-          value={value}
-          onChange={onChange}
-        />
+        {countryEntities === undefined ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[76px] w-full animate-pulse rounded-2xl bg-neutral-100"
+              />
+            ))}
+          </div>
+        ) : options.length === 0 ? (
+          <div className="rounded-2xl bg-neutral-50 p-6 text-center text-neutral-500">
+            No registered business structures found for this country yet. Please
+            check back soon or choose another country.
+          </div>
+        ) : (
+          <div
+            className="flex flex-col space-y-3"
+            role="radiogroup"
+            aria-label="businessStructure"
+          >
+            {options.map((item) => {
+              const selected = item.name === value;
+              return (
+                <button
+                  key={item.name}
+                  className={`flex w-full items-start gap-4 rounded-2xl p-4 text-left transition-all ${
+                    selected
+                      ? "bg-[#dfdbff] font-medium text-neutral-900"
+                      : "bg-transparent text-neutral-800 hover:bg-neutral-50"
+                  }`}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => onChange(item.name)}
+                >
+                  <span
+                    className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full transition-colors ${
+                      selected ? "bg-[#5037ff] text-white" : "bg-neutral-300"
+                    }`}
+                  >
+                    {selected && (
+                      <Check className="size-4 stroke-[3]" aria-hidden="true" />
+                    )}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-semibold sm:text-xl">
+                        {item.name}
+                      </span>
+                      {item.shortName && (
+                        <span className="rounded-md bg-neutral-200/70 px-2 py-0.5 text-xs font-semibold text-neutral-600">
+                          {item.shortName}
+                        </span>
+                      )}
+                    </div>
+                    {item.description && (
+                      <p className="mt-1 text-sm text-neutral-500 line-clamp-2">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!isValid} />
     </div>
   );
 }
@@ -641,13 +783,14 @@ function BriefDescriptionStep({
   onBack,
   onContinue,
 }: BriefDescriptionStepProps) {
+  const isValid = Boolean(value.trim());
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader label="Business details" tone="business" onBack={onBack} />
       <main className="flex-1">
         <h1 className="mb-8 text-2xl font-bold leading-snug tracking-tight text-[#342490] sm:text-3xl">
-          Give us a brief description of the business (business activities and
-          purpose)
+          Give us a brief description of the business
         </h1>
         <Textarea
           className="h-40 w-full resize-none rounded-2xl p-5 text-lg"
@@ -660,7 +803,7 @@ function BriefDescriptionStep({
           Characters: {value.length}
         </p>
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!isValid} />
     </div>
   );
 }
@@ -682,6 +825,8 @@ function ActivityPurposeStep({
   onBack,
   onContinue,
 }: ActivityPurposeStepProps) {
+  const isValid = Boolean(value.trim());
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader label="Business details" tone="business" onBack={onBack} />
@@ -700,7 +845,7 @@ function ActivityPurposeStep({
           Characters: {value.length}
         </p>
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!isValid} />
     </div>
   );
 }
@@ -722,6 +867,8 @@ function BusinessKindStep({
   onBack,
   onContinue,
 }: BusinessKindStepProps) {
+  const isValid = Boolean(value.trim());
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader label="Business details" tone="business" onBack={onBack} />
@@ -736,7 +883,7 @@ function BusinessKindStep({
           onChange={onChange}
         />
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!isValid} />
     </div>
   );
 }
@@ -762,6 +909,10 @@ function StartDateStep({
   onBack,
   onContinue,
 }: StartDateStepProps) {
+  const isValid = Boolean(
+    startYear && startYear.trim() && startMonth && startMonth.trim(),
+  );
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader label="Business details" tone="business" onBack={onBack} />
@@ -790,7 +941,7 @@ function StartDateStep({
           </FormField>
         </div>
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!isValid} />
     </div>
   );
 }
@@ -817,6 +968,18 @@ function PersonalInformationStep({
   onBack,
   onContinue,
 }: PersonalInformationStepProps) {
+  const hasRequiredDetails = Boolean(
+    personal.firstName.trim() &&
+      personal.lastName.trim() &&
+      personal.email.trim() &&
+      /^\S+@\S+\.\S+$/.test(personal.email.trim()) &&
+      personal.phone.trim() &&
+      personal.whatsapp.trim() &&
+      personal.residentialAddress.trim() &&
+      personal.countryOfCitizenship.trim() &&
+      personal.dateOfBirth.trim(),
+  );
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader
@@ -915,7 +1078,7 @@ function PersonalInformationStep({
           )}
         </div>
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!hasRequiredDetails} />
     </div>
   );
 }
@@ -942,6 +1105,8 @@ function GovernmentIdStep({
   onBack,
   onContinue,
 }: GovernmentIdStepProps) {
+  const isValid = Boolean(personal.idType.trim() && personal.idNumber.trim());
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader
@@ -978,7 +1143,7 @@ function GovernmentIdStep({
           )}
         </div>
       </main>
-      <StepFooter onClick={onContinue} />
+      <StepFooter onClick={onContinue} disabled={!isValid} />
     </div>
   );
 }
@@ -993,6 +1158,8 @@ interface ShareholdersStepProps {
   onEditShareholder: (index: number) => void;
   onRemoveShareholder: (index: number) => void;
   onBack: () => void;
+  isSubmitting?: boolean;
+  submitError?: string;
   onSubmit: () => void;
 }
 
@@ -1002,6 +1169,8 @@ function ShareholdersStep({
   onEditShareholder,
   onRemoveShareholder,
   onBack,
+  isSubmitting = false,
+  submitError,
   onSubmit,
 }: ShareholdersStepProps) {
   const [selectedShareholderIndex, setSelectedShareholderIndex] = useState<
@@ -1012,6 +1181,13 @@ function ShareholdersStep({
     selectedShareholderIndex !== null
       ? shareholders[selectedShareholderIndex]
       : null;
+
+  const totalPercentage = shareholders.reduce(
+    (sum, s) => sum + (Number(s.ownership) || 0),
+    0,
+  );
+  const isValid =
+    shareholders.length > 0 && totalPercentage <= 100 && !isSubmitting;
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -1055,12 +1231,23 @@ function ShareholdersStep({
           className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-neutral-200/80 text-base font-semibold text-neutral-800 transition-all hover:bg-neutral-200 active:scale-[0.99]"
           type="button"
           onClick={onAddShareholderClick}
+          disabled={isSubmitting}
         >
           <Plus className="size-5 stroke-[2.5]" aria-hidden="true" /> Add
           shareholder
         </Button>
+
+        {submitError && (
+          <div className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-medium text-red-600">
+            {submitError}
+          </div>
+        )}
       </main>
-      <StepFooter buttonText="Submit" onClick={onSubmit} />
+      <StepFooter
+        buttonText={isSubmitting ? "Submitting application..." : "Submit"}
+        onClick={onSubmit}
+        disabled={!isValid || isSubmitting}
+      />
 
       <Drawer
         open={selectedShareholderIndex !== null}
@@ -1147,6 +1334,24 @@ function ShareholderFormStep({
     number | undefined
   >(undefined);
 
+  const percentage = Number(shareholder.ownership);
+  const isFormValid = Boolean(
+    shareholder.firstName.trim() &&
+      shareholder.lastName.trim() &&
+      shareholder.ownership.trim() &&
+      Number.isFinite(percentage) &&
+      percentage > 0 &&
+      percentage <= 100 &&
+      shareholder.email.trim() &&
+      /^\S+@\S+\.\S+$/.test(shareholder.email.trim()) &&
+      shareholder.phone.trim() &&
+      shareholder.country.trim() &&
+      shareholder.state.trim() &&
+      shareholder.city.trim() &&
+      shareholder.zipCode.trim() &&
+      shareholder.address.trim(),
+  );
+
   return (
     <div className="flex min-h-dvh flex-col">
       <StepHeader onBack={onBack} />
@@ -1214,7 +1419,12 @@ function ShareholderFormStep({
               selectedId={shareholderCountryId}
               update={(country) => {
                 onChange("country", country?.name ?? "");
+                onChange(
+                  "countryOriginalId",
+                  country?.id as number | undefined,
+                );
                 onChange("state", "");
+                onChange("stateOriginalId", undefined);
                 setShareholderCountryId(country?.id as number | undefined);
               }}
               className="h-16 rounded-2xl px-5 text-lg text-left"
@@ -1224,7 +1434,10 @@ function ShareholderFormStep({
             <SelectState
               fetchStates={fetchStates}
               countryOriginalId={shareholderCountryId}
-              update={(state) => onChange("state", state?.name ?? "")}
+              update={(state) => {
+                onChange("state", state?.name ?? "");
+                onChange("stateOriginalId", state?.id as number | undefined);
+              }}
               className="h-16 rounded-2xl px-5 text-lg text-left"
               disabled={!shareholderCountryId}
             />
@@ -1266,6 +1479,7 @@ function ShareholderFormStep({
       <StepFooter
         buttonText={isEditing ? "Save changes" : "Add shareholder"}
         onClick={onSaveShareholder}
+        disabled={!isFormValid}
       />
     </div>
   );
@@ -1335,33 +1549,53 @@ function SubmittedStep() {
 
 function BusinessRegistrationPage() {
   const [step, setStep] = useState<RegistrationStep>("intro");
-  const [countryName, setCountryName] = useState("United Kingdom");
-  const [details, setDetails] = useState<BusinessDetails>({
-    registeredElsewhere: "Yes",
-    registeredCountries: "",
-    businessName: "",
-    structure: businessStructures[0] ?? "Limited Liability Company",
-    briefDescription: "",
-    activityPurpose: "",
-    businessKind: businessKinds[0] ?? "A new business",
-    startYear: "",
-    startMonth: "",
+
+  const form = useForm<RegistrationFormData>({
+    mode: "onChange",
+    defaultValues: {
+      countryName: "United Kingdom",
+      registeredElsewhere: "Yes",
+      registeredCountries: "",
+      businessName: "",
+      structure: "",
+      briefDescription: "",
+      activityPurpose: "",
+      businessKind: businessKinds[0] ?? "A new business",
+      startYear: "",
+      startMonth: "",
+      personal: {
+        firstName: "",
+        lastName: "",
+        otherNames: "",
+        email: "",
+        phone: "",
+        whatsapp: "",
+        residentialAddress: "",
+        countryOfCitizenship: "",
+        dateOfBirth: "",
+        idType: "NIN",
+        idNumber: "",
+      },
+      shareholders: [],
+    },
   });
-  const [personal, setPersonal] = useState<PersonalInformation>({
-    firstName: "",
-    lastName: "",
-    otherNames: "",
-    email: "",
-    phone: "",
-    whatsapp: "",
-    residentialAddress: "",
-    countryOfCitizenship: "",
-    dateOfBirth: "",
-    idType: "NIN",
-    idNumber: "",
-  });
+
+  const { watch, setValue } = form;
+
+  const countryName = watch("countryName");
+  const registeredElsewhere = watch("registeredElsewhere");
+  const registeredCountries = watch("registeredCountries");
+  const businessName = watch("businessName");
+  const structure = watch("structure");
+  const briefDescription = watch("briefDescription");
+  const activityPurpose = watch("activityPurpose");
+  const businessKind = watch("businessKind");
+  const startYear = watch("startYear");
+  const startMonth = watch("startMonth");
+  const personal = watch("personal");
+  const shareholders = watch("shareholders");
+
   const [personalError, setPersonalError] = useState("");
-  const [shareholders, setShareholders] = useState<Shareholder[]>([]);
   const [editingShareholderIndex, setEditingShareholderIndex] = useState<
     number | null
   >(null);
@@ -1385,22 +1619,30 @@ function BusinessRegistrationPage() {
   ) ??
     registrationCountries?.[0] ?? {
       name: countryName,
-      emoji: null,
+      iso2: null,
       originalId: undefined,
     };
 
-  const updateDetails = <K extends keyof BusinessDetails>(
-    key: K,
-    value: BusinessDetails[K],
-  ) => {
-    setDetails((current) => ({ ...current, [key]: value }));
-  };
+  const countryEntities = useEntityTypesByCountry(country.originalId);
+  const createBusiness = useCreateBusiness();
+  const addShareholder = useAddShareholder();
+  const upsertProfile = useUpsertProfile();
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const updatePersonal = <K extends keyof PersonalInformation>(
     key: K,
     value: PersonalInformation[K],
   ) => {
-    setPersonal((current) => ({ ...current, [key]: value }));
+    setValue(
+      `personal.${key}` as `personal.${keyof PersonalInformation}`,
+      value,
+      {
+        shouldValidate: true,
+        shouldDirty: true,
+      },
+    );
     setPersonalError("");
   };
 
@@ -1412,11 +1654,92 @@ function BusinessRegistrationPage() {
     setShareholderError("");
   };
 
+  async function handleSubmitApplication() {
+    try {
+      setIsSubmitting(true);
+      setSubmitError("");
+
+      // 1. Upsert Profile with personal info and government ID
+      await upsertProfile({
+        firstName: personal.firstName,
+        lastName: personal.lastName,
+        middleName: personal.otherNames || undefined,
+        email: personal.email,
+        phoneNumber: personal.phone,
+        whatsappPhoneNumber: personal.whatsapp,
+        residentialAddress: personal.residentialAddress,
+        countryOriginalId: country.originalId,
+        dateOfBirth: personal.dateOfBirth,
+        governmentIds: {
+          nin: personal.idType === "NIN" ? personal.idNumber : undefined,
+          passport:
+            personal.idType === "International Passport"
+              ? personal.idNumber
+              : undefined,
+          driversLicense:
+            personal.idType === "Driver’s License"
+              ? personal.idNumber
+              : undefined,
+        },
+      });
+
+      // 2. Resolve entityTypeId from selected country entity
+      const selectedEntity = countryEntities?.find(
+        (m) => m.entity?.name === structure,
+      )?.entity;
+
+      // 3. Create Business record
+      const businessId = await createBusiness({
+        name: businessName,
+        countryOriginalId: country.originalId ?? 0,
+        isAStartup: businessKind === "A new business",
+        entityTypeId: selectedEntity?._id,
+        businessDescription: briefDescription,
+        businessActivitiesAndPurpose: activityPurpose,
+        businessStartDate:
+          startYear && startMonth ? `${startMonth} ${startYear}` : undefined,
+        status: "pending",
+        paymentStatus: "unpaid",
+        otherCountriesRegisteredIn:
+          registeredElsewhere === "Yes" && registeredCountries
+            ? registeredCountries
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : undefined,
+      });
+
+      // 4. Add each Shareholder linked to the newly created business
+      for (const sh of shareholders) {
+        await addShareholder({
+          businessId,
+          firstName: sh.firstName,
+          lastName: sh.lastName,
+          email: sh.email,
+          ownershipPercentage: Number(sh.ownership),
+          countryOriginalId: sh.countryOriginalId,
+          countryStateOriginalId: sh.stateOriginalId,
+          city: sh.city,
+          zipCode: sh.zipCode,
+          address: sh.address,
+        });
+      }
+
+      setStep("submitted");
+    } catch (err: any) {
+      console.error("Submission error:", err);
+      setSubmitError(
+        err?.message ||
+          "Failed to submit your business application. Please ensure you are logged in and try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   const stepsList: RegistrationStep[] = [
     "registered-elsewhere",
-    ...(details.registeredElsewhere === "Yes"
-      ? ["registered-countries" as const]
-      : []),
+    ...(registeredElsewhere === "Yes" ? ["registered-countries" as const] : []),
     "business-name",
     "structure",
     "brief-description",
@@ -1552,13 +1875,18 @@ function BusinessRegistrationPage() {
     }
 
     if (editingShareholderIndex !== null) {
-      setShareholders((current) =>
-        current.map((item, idx) =>
-          idx === editingShareholderIndex ? newShareholder : item,
-        ),
+      const updated = shareholders.map((item, idx) =>
+        idx === editingShareholderIndex ? newShareholder : item,
       );
+      setValue("shareholders", updated, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     } else {
-      setShareholders((current) => [...current, newShareholder]);
+      setValue("shareholders", [...shareholders, newShareholder], {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     }
 
     setEditingShareholderIndex(null);
@@ -1586,7 +1914,12 @@ function BusinessRegistrationPage() {
         {step === "country" && (
           <CountryStep
             countryName={countryName}
-            onSelectCountry={setCountryName}
+            onSelectCountry={(name) =>
+              setValue("countryName", name, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
+            }
             onBack={goBack}
             onContinue={() => setStep("package")}
           />
@@ -1594,7 +1927,11 @@ function BusinessRegistrationPage() {
 
         {step === "package" && (
           <PackageStep
-            country={{ name: country.name, flag: country.emoji }}
+            country={{
+              name: country.name,
+              iso2: country.iso2,
+              originalId: country.originalId,
+            }}
             onBack={goBack}
             onContinue={continueFromStep}
           />
@@ -1602,8 +1939,13 @@ function BusinessRegistrationPage() {
 
         {step === "registered-elsewhere" && (
           <RegisteredElsewhereStep
-            value={details.registeredElsewhere}
-            onChange={(val) => updateDetails("registeredElsewhere", val)}
+            value={registeredElsewhere}
+            onChange={(val) =>
+              setValue("registeredElsewhere", val, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
+            }
             onBack={goBack}
             onContinue={continueFromStep}
           />
@@ -1611,8 +1953,13 @@ function BusinessRegistrationPage() {
 
         {step === "registered-countries" && (
           <RegisteredCountriesStep
-            value={details.registeredCountries}
-            onChange={(val) => updateDetails("registeredCountries", val)}
+            value={registeredCountries}
+            onChange={(val) =>
+              setValue("registeredCountries", val, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
+            }
             onBack={goBack}
             onContinue={continueFromStep}
           />
@@ -1620,8 +1967,13 @@ function BusinessRegistrationPage() {
 
         {step === "business-name" && (
           <BusinessNameStep
-            value={details.businessName}
-            onChange={(val) => updateDetails("businessName", val)}
+            value={businessName}
+            onChange={(val) =>
+              setValue("businessName", val, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
+            }
             onBack={goBack}
             onContinue={continueFromStep}
           />
@@ -1629,8 +1981,14 @@ function BusinessRegistrationPage() {
 
         {step === "structure" && (
           <StructureStep
-            value={details.structure}
-            onChange={(val) => updateDetails("structure", val)}
+            countryOriginalId={country.originalId}
+            value={structure}
+            onChange={(val) =>
+              setValue("structure", val, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
+            }
             onBack={goBack}
             onContinue={continueFromStep}
           />
@@ -1638,8 +1996,13 @@ function BusinessRegistrationPage() {
 
         {step === "brief-description" && (
           <BriefDescriptionStep
-            value={details.briefDescription}
-            onChange={(val) => updateDetails("briefDescription", val)}
+            value={briefDescription}
+            onChange={(val) =>
+              setValue("briefDescription", val, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
+            }
             onBack={goBack}
             onContinue={continueFromStep}
           />
@@ -1647,8 +2010,13 @@ function BusinessRegistrationPage() {
 
         {step === "activity-purpose" && (
           <ActivityPurposeStep
-            value={details.activityPurpose}
-            onChange={(val) => updateDetails("activityPurpose", val)}
+            value={activityPurpose}
+            onChange={(val) =>
+              setValue("activityPurpose", val, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
+            }
             onBack={goBack}
             onContinue={continueFromStep}
           />
@@ -1656,8 +2024,13 @@ function BusinessRegistrationPage() {
 
         {step === "business-kind" && (
           <BusinessKindStep
-            value={details.businessKind}
-            onChange={(val) => updateDetails("businessKind", val)}
+            value={businessKind}
+            onChange={(val) =>
+              setValue("businessKind", val, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
+            }
             onBack={goBack}
             onContinue={continueFromStep}
           />
@@ -1665,10 +2038,20 @@ function BusinessRegistrationPage() {
 
         {step === "start-date" && (
           <StartDateStep
-            startYear={details.startYear}
-            startMonth={details.startMonth}
-            onYearChange={(year) => updateDetails("startYear", year)}
-            onMonthChange={(month) => updateDetails("startMonth", month)}
+            startYear={startYear}
+            startMonth={startMonth}
+            onYearChange={(year) =>
+              setValue("startYear", year, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
+            }
+            onMonthChange={(month) =>
+              setValue("startMonth", month, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
+            }
             onBack={goBack}
             onContinue={continueFromStep}
           />
@@ -1724,12 +2107,16 @@ function BusinessRegistrationPage() {
               }
             }}
             onRemoveShareholder={(index) => {
-              setShareholders((current) =>
-                current.filter((_, idx) => idx !== index),
-              );
+              const updated = shareholders.filter((_, idx) => idx !== index);
+              setValue("shareholders", updated, {
+                shouldValidate: true,
+                shouldDirty: true,
+              });
             }}
             onBack={goBack}
-            onSubmit={continueFromStep}
+            isSubmitting={isSubmitting}
+            submitError={submitError}
+            onSubmit={handleSubmitApplication}
           />
         )}
 

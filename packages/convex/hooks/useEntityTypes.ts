@@ -13,6 +13,17 @@ export function useEntityTypeById(entityTypeId?: Id<"entityTypes">) {
   );
 }
 
+export function useAdminEntityTypes() {
+  return useQuery(api.entityTypes.getAdminEntityTypes);
+}
+
+export function useAdminEntityType(entityTypeId?: Id<"entityTypes">) {
+  return useQuery(
+    api.entityTypes.getAdminEntityType,
+    entityTypeId ? { entityTypeId } : "skip",
+  );
+}
+
 export function useEntityTypeByShortName(shortName?: string) {
   return useQuery(
     api.entityTypes.getEntityTypeByShortName,
