@@ -23,4 +23,3 @@ authComponent.registerRoutes(http, createAuth, {
 });
 
 export default http;
-
